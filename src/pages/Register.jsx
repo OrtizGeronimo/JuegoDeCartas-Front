@@ -1,20 +1,18 @@
-
-import { useNavigate } from "react-router-dom"; 
-import { login } from "../services/userService";
+import { useNavigate } from "react-router-dom";
 import GenericForm from "../components/form/GenericForm";
+import { register } from "../services/userService";
+import { successSnackbar } from "../utils/snackbar";
 
 
-
-export default function Main(){
-
+export default function Register(){
 
     const navigate = useNavigate();
-
 
     const handleSubmit = async (formData, setFormError) => {
 
         try {
-            const response = await login(formData);    
+            const response = await register(formData);
+            successSnackbar("Registro realizado con éxito")    
             navigate("/config")
         } catch (error) {
             console.log("catch")
@@ -27,6 +25,6 @@ export default function Main(){
     }
 
     return (
-        <GenericForm onSubmit={handleSubmit} isLogin={true}/>
+        <GenericForm onSubmit={handleSubmit} isLogin={false}/>
     )
 }
