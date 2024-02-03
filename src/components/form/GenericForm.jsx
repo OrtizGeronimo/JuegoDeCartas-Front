@@ -6,7 +6,6 @@ import AlertMessage from "../common/AlertMessage";
 
 export default function GenericForm({onSubmit,isLogin}) {
 
-    console.log("onsubmit function!" + onSubmit)
 
 
     const [formError, setFormError] = useState({

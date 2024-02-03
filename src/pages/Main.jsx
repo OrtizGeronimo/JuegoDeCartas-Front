@@ -1,32 +1,24 @@
-
-import { useNavigate } from "react-router-dom"; 
-import { login } from "../services/userService";
-import GenericForm from "../components/form/GenericForm";
-
-
+import { useEffect } from "react";
+import { getCurrentUser } from "../services/userService";
+import { useNavigate } from "react-router-dom";
 
 export default function Main(){
-
-
+    
     const navigate = useNavigate();
 
-
-    const handleSubmit = async (formData, setFormError) => {
-
+    const fetchUser = async () => {
         try {
-            const response = await login(formData);    
-            navigate("/config")
+            const user = getCurrentUser()
         } catch (error) {
-            console.log("catch")
-            setFormError({
-                status: true,
-                description: JSON.stringify(error.response.data.message)
-            });
+            navigate("/")
         }
-           
     }
+    
+    useEffect(() => {
+         fetchUser();
+    }, [])
 
-    return (
-        <GenericForm onSubmit={handleSubmit} isLogin={true}/>
-    )
+
+    return (navigate("/cards/config"))
+
 }
