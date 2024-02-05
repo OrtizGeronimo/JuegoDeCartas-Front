@@ -75,7 +75,7 @@ export default function GenericForm({onSubmit,isLogin}) {
                         )}
                         <FormLabel>Contraseña</FormLabel>
                         <Input id="contraseña" type='password' name="contraseña" onChange={handleInputChange}/>
-                        <Button {...loginButtonStyle} type="submit">Ingresar</Button>
+                        <Button {...loginButtonStyle} type="submit">{isLogin ? "Ingresar": "Registrarse"}</Button>
                     </VStack>
                     { isLogin ? <FormHelperText color="white">No tienes un usuario? <Link to="/register">Crear uno</Link></FormHelperText> : <FormHelperText color="white"><Link to="/">Volver a Inicio de Sesión</Link></FormHelperText>}
                 </FormControl>

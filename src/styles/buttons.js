@@ -15,3 +15,14 @@ export const loginButtonStyle = {
     'borderColor': 'black',
     'borderWidth': '1px'
   }
+
+
+  export const throwCardButtonStyle = {
+    "bg":"#296A2E",
+    'colorScheme': 'green',
+    'borderRadius': '10px',
+    'fontSize': '10px',
+    'borderColor': 'black',
+    'borderWidth': '1px',
+    'height': '15px'
+  }

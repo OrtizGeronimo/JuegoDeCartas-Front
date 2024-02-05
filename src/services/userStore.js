@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from 'react';
 import { Subject } from 'rxjs';
-import { User } from '../services/userService';
+import { User, getCurrentUser } from '../services/userService';
 
 let currentUser;
 

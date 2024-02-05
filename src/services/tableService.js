@@ -14,3 +14,16 @@ export async function createTable(data){
     }
         
 }
+
+export async function changeTeam(idUsuario, idMesa){
+    try {
+        const data = {
+            idUsuario: idUsuario,
+            idMesa: idMesa
+        }
+        const response = await axios.post(environment.api_url + "/cambiarEquipo", data)
+        setCurrentTable(response.data)
+    } catch (error) {
+        console.error("Hubo un error al cambiar de equipo:" , error)
+    }
+}

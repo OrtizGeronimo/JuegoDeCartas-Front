@@ -76,7 +76,6 @@ export default function Config(){
                             <Stack direction='row'>
                                 <Radio value='2'>2</Radio>
                                 <Radio value='4'>4</Radio>
-                                <Radio value='6'>6</Radio>
                             </Stack>
                         </RadioGroup>
                         </HStack>

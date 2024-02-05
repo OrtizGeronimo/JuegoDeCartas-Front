@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { loginButtonStyle } from "../styles/buttons"
 import { useEffect, useState } from "react"
 import { startGame } from "../services/gameService"
+import { changeTeam } from "../services/tableService"
 import SockJsClient from 'react-stomp';
 import { environment } from "../utils/environment"
 import { io } from "socket.io-client"
@@ -22,22 +23,6 @@ export default function Lobby(){
 
     const user = useSessionUser();
 
-    console.log("USER: " + user);
-    console.log("table: " + table.equipos[0].jugadores.length)
-
-    let onConnected = () => {
-      console.log("Connected!!")
-      setTopics(['/topic/message']);
-    }
-
-    let onMessageReceived = (msg) => {
-      console.log("mensaje recibido: " + msg)
-      setTeam1(msg.equipos[0])
-      setTeam2(msg.equipos[1])
-      setCurrentTable(msg)
-    }
-
-
     const [team1, setTeam1] = useState(table.equipos[0]);
     const [team2, setTeam2] = useState(table.equipos[1]);
 
@@ -46,6 +31,32 @@ export default function Lobby(){
       ownerId: table.owner.id,
       equipos: [{},{}]
     })
+
+    console.log("USER: " + user);
+    console.log("table: " + table.id)
+
+    let onConnected = () => {
+      console.log("Connected!!")
+      setTopics(['/topic/message']);
+    }
+
+    let onMessageReceived = (msg) => {
+      try { 
+      console.log("mensaje recibido: " + msg)
+      setTeam1(msg.equipos[0])
+      setTeam2(msg.equipos[1])
+      handleTeamChange(msg)
+      setCurrentTable(msg)
+      if (msg.estado === "mezclando"){
+        navigate("/table")
+      }
+    } catch (error) {
+        console.error("ERROR --" + error)
+    }
+    }
+
+
+    
   
  
     const handleSubmit = async (e) => {
@@ -55,6 +66,7 @@ export default function Lobby(){
             const response = await startGame(formData);
             console.log(response)
             navigate("/table", { state: {data: response.data}})
+            setCurrentTable(response.data)
         } catch (error) {
             console.log("ERROR" + error)
         }
@@ -64,33 +76,34 @@ export default function Lobby(){
     
 
 
-    const handleTeamChange = () => {
+    const handleTeamChange = (msg) => {
+        const equipos = []
+        console.log("handle team change manual")
+        equipos[0] = msg?.equipos[0] || team1
+        equipos[1] = msg?.equipos[1] || team2
+        console.log(equipos)
         setFormData(
           { 
             ...formData,
-            equipos: [{ idJugadores: team1.jugadores.map(player => player.id)}, { idJugadores: team2.jugadores.map(player => player.id)}]
+            //equipos: [{ idJugadores: team1.jugadores.map(player => player.id)}, { idJugadores: team2.jugadores.map(player => player.id)}]
+            equipos: equipos
           })
     }
 
     useEffect(() => {
-
+      console.log("handle team change")
       handleTeamChange();
     }, []);
 
-    const moveItemToTeam2 = (itemIndex) => {
-      const movedItem = team1[itemIndex];
-      setTeam1((prevTeam1) => prevTeam1.jugadores.filter((_, index) => index !== itemIndex));
-      setTeam2((prevTeam2) => [...prevTeam2, movedItem]);
+    const apiChangeTeam = async (id) => {
+      await changeTeam(id, table.id);
+    }
+
+    const moveTeamPlayer = (id) => {
+      apiChangeTeam(id)
       handleTeamChange()
     };
   
-    const moveItemToTeam1 = (itemIndex) => {
-      const movedItem = team2[itemIndex];
-      setTeam2((prevTeam2) => prevTeam2.jugadores.filter((_, index) => index !== itemIndex));
-      setTeam1((prevTeam1) => [...prevTeam1, movedItem]);
-      handleTeamChange()
-    };
-
   
     return (
       <Center height="100vh">
@@ -114,8 +127,8 @@ export default function Lobby(){
               {team1.jugadores.map((item, index) => (
                 <Box key={index}>
                   <Text>{item.nombre}</Text>
-                  { user.isOwner &&
-                  <Button onClick={() => moveItemToTeam2(index)} colorScheme="purple" size="sm">
+                  { user.id === table.owner.id &&
+                  <Button onClick={() => moveTeamPlayer(item.id)} colorScheme="purple" size="sm">
                     Move to Team 2
                   </Button>
                   }
@@ -128,8 +141,8 @@ export default function Lobby(){
               {team2.jugadores.length !== 0 && team2.jugadores.map((item, index) => (
                 <Box key={index}>
                   <Text>{item.nombre}</Text>
-                  {user.isOwner &&
-                    <Button onClick={() => moveItemToTeam1(index)} colorScheme="blue" size="sm">
+                  {user.id === table.owner.id && 
+                    <Button onClick={() => moveTeamPlayer(item.id)} colorScheme="blue" size="sm">
                     Move to Team 1
                   </Button>}
                 </Box>
@@ -137,8 +150,10 @@ export default function Lobby(){
             </VStack>
             
         </Box>
-        <Button {...loginButtonStyle} type="submit">Comenzar</Button>
+        {user.id === table.owner.id && 
+          <Button {...loginButtonStyle} type="submit">Comenzar</Button>}
         </VStack>
+        <Text>Admin: {table.owner.nombre}</Text>
         </form>
       </Center>
     );

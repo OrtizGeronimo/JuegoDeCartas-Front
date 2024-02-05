@@ -13,7 +13,7 @@ export default function Register(){
         try {
             const response = await register(formData);
             successSnackbar("Registro realizado con éxito")    
-            navigate("/config")
+            navigate("/")
         } catch (error) {
             console.log("catch")
             setFormError({
