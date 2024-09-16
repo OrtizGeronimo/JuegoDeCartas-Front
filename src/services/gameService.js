@@ -86,3 +86,48 @@ export async function endRound(tableId){
     }
 }
 
+export async function addPoint(tableId, teamId, status){
+    const data = {
+        mesaId: tableId,
+        equipoId: teamId,
+        estado: status
+    }
+    try {
+        const res = await axios.post(environment.api_url + "/sumarPunto", data)
+        setCurrentTable(res.data)
+        return res.data
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+export async function removePoint(tableId, teamId, status){
+    const data = {
+        mesaId: tableId,
+        equipoId: teamId,
+        estado: status
+    }
+    try {
+        const res = await axios.post(environment.api_url + "/restarPunto", data)
+        setCurrentTable(res.data)
+        return res.data
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+export async function retire(tableId, username){
+    const data = {
+        mesaId: tableId,
+        usuario: username
+    }
+
+    try {
+        const res = await axios.post(environment.api_url + "/irseAlMazo", data)
+        setCurrentTable(res.data)
+        return res.data
+    } catch (error) {
+        console.error(error)
+    }
+}
+

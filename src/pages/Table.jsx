@@ -1,13 +1,14 @@
-import { Box, Button, Center, HStack, Text, VStack, createLocalStorageManager } from '@chakra-ui/react';
+import { Box, Button, Center, HStack, Image, Text, VStack, createLocalStorageManager } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { setCurrentTable, useCurrentTable } from '../services/tableStore';
 import SockJsClient from 'react-stomp';
-import { endRound, getAllCards, giveCards, shuffleCards, throwCard } from '../services/gameService';
+import { endRound, getAllCards, giveCards, retire, shuffleCards, throwCard } from '../services/gameService';
 import { useSessionUser } from '../services/userStore';
 import { loginButtonStyle, throwCardButtonStyle } from '../styles/buttons';
 import { ToastContainer, toast } from 'react-toastify';
 import { getCurrentUser } from '../services/userService';
 import 'react-toastify/dist/ReactToastify.css';
+import ScoreContainer from '../components/game/ScoreContainer';
 
 
 const SOCKET_URL = 'http://localhost:8080/ws-message';
@@ -28,10 +29,16 @@ export default function Table() {
   let onMessageReceived = (msg) => {
     console.log("mensaje recibido: " + JSON.stringify(msg, null, 2)); 
     if (msg.estado === "mezclando"){
+      if (msg.punto){
+        setCurrentTable(msg)
+      }
       console.log("ejecutando toast..")
       toast("El dealer mezcló")
     } else {
-    setCurrentTable(msg) 
+      if (msg.usuarioAlMazo !== ""){
+          toast(msg.usuarioAlMazo + " se fue al mazo")
+      }
+      setCurrentTable(msg) 
     }
   }
 
@@ -119,7 +126,11 @@ export default function Table() {
         />
         <ToastContainer />
 
+        <HStack>
+        <ScoreContainer />
       <VStack>
+        
+        
         <Text>Mesa : {table.id}</Text>
         <Box
         w="70vw"
@@ -133,7 +144,9 @@ export default function Table() {
         {renderPlayers()}
       </Box>
       <SmallBox user={user} table={table} mezclar={mezclar} repartir={repartir}></SmallBox>
+      
       </VStack>
+      </HStack>
     </Center>
   );
 };
@@ -144,9 +157,11 @@ const Player = ({ position, player, index, table }) => {
     isDealer = true;
   }
 
+  const user = useSessionUser()
+
   const enMesa = player.enMesa
 
-  const hisTurn = index === table.turnero.indexTurnoActual
+  const isCurrent = player.id === user.id
 
   const playerStyle = {
     position: 'absolute',
@@ -154,12 +169,12 @@ const Player = ({ position, player, index, table }) => {
     height: '20px',
     borderRadius: '50%',
     bg: 'red.500',
-    boxShadow: hisTurn ? '0 0 10px rgba(255, 255, 255, 0.8)' : 'none',
+    boxShadow: isCurrent ? '0 0 10px rgba(255, 255, 255, 0.8)' : 'none',
   };
   const cardStyle = {
     position: 'absolute',
-    width: '40px',
-    height: '50px',
+    width: '50px',
+    height: '30px',
     bg: 'blue.500',
     borderRadius: 'md',
     border: '1px solid black', 
@@ -191,12 +206,12 @@ const Player = ({ position, player, index, table }) => {
 
   const getVerticalOffset = (index, position) => {
     // Adjust this value to control the overlap
-    const overlapOffset = 15;
+    const overlapOffset = 20;
   
     if (position === 'bottom') {
-      return `${index * overlapOffset - 90}px`; // Adjust the offset for the top player
+      return `${index * overlapOffset - 100}px`; // Adjust the offset for the top player
     } else if (position === 'top') {
-      return `${index * overlapOffset + 40}px`; // Adjust the offset for the bottom player
+      return `${index * overlapOffset + 60}px`; // Adjust the offset for the bottom player
     } else {
       return `${index * overlapOffset}px`; // Use the default offset for other positions
     }
@@ -244,12 +259,12 @@ const Player = ({ position, player, index, table }) => {
               {...cardStyle}
               style={{ top: getVerticalOffset(cardIndex, position) }}
             >
-              <Text fontSize="xs">{card.carta.numero} {card.carta.palo.nombre}</Text>
+              <Image key={0} src={`/cartas/${card.carta.link}.png`} height="80px" width="75px" />
             </Box>)
           })
           
         }
-        {isDealer && <Box {...dealerCardStyle}><Text fontSize="xs">Dealer</Text></Box>}
+        {isDealer && <Box {...dealerCardStyle}><Image key={0} src={`/cartas/r0.png`} height="40px" width="30px" /></Box>}
       </Box>
       
     </>
@@ -258,10 +273,7 @@ const Player = ({ position, player, index, table }) => {
 
 const SmallBox = ({ user, table, mezclar, repartir }) => {
   
-  console.log(user)
   console.log("ESTADO" + table.estado)
-  console.log(mezclar)
-  console.log(repartir)
   
   const isDealer = table.turnero.jugadoresOrdenados[table.turnero.indexDealer].id === user.id;
 
@@ -270,20 +282,25 @@ const SmallBox = ({ user, table, mezclar, repartir }) => {
   const handleThrowCard = async (id) => {
     await throwCard(id, table.id, player.id)
   }
+
+  const handleRetire = async (nombre) => {
+    await retire(table.id, nombre)
+  }
   
   const hand = player.enMano;
 
   const cardHandStyle = {
+    /*
     width: '40px',
     height: '50px',
     bg: 'blue.500',
     borderRadius: 'md',
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
+  */
   };
 
-  console.log(hand)
 
   const handleEndRound = async () => {
     await endRound(table.id)
@@ -307,12 +324,15 @@ const SmallBox = ({ user, table, mezclar, repartir }) => {
           <>
           <VStack>
           <Box key={card.carta.id} {...cardHandStyle}>
-            <Text fontSize="xs">{card.carta.numero} {card.carta.palo.nombre}</Text>
+          <Image key={0} src={`/cartas/${card.carta.link}.png`} height="60px" width="50px" />
           </Box>
           <Button {...throwCardButtonStyle} onClick={() => handleThrowCard(card.id)}>Tirar</Button>
           </VStack>
           </>
-        )) }
+        ))
+         }
+
+         {table.estado === "En Juego" && <Button {...throwCardButtonStyle} onClick={() => handleRetire(player.nombre)}>Irse al mazo</Button> }
 
         {table.estado === "Fin Ronda" && isDealer && <Button onClick={handleEndRound}>Finalizar Ronda</Button>}
 
